@@ -22,7 +22,7 @@ class morbidostat_monitor(object):
             self.figure_updater = threading.Thread(target = self.update_cycle)
             #self.figure_updater.daemon=True
         else:
-            print "data directory not found"
+            print("data directory not found")
     
     def start(self):
         self.continue_plotting=True
@@ -87,11 +87,11 @@ class morbidostat_monitor(object):
                         elif entries[0]=='dilution_threshold:':
                             self.__setattr__('dilution_threshold', float(entries[-1]))
                         else:
-                            print "unrecognized parameter entry:",line, entries
+                            print("unrecognized parameter entry:",line, entries)
                     except:
-                        print "can't parse:", line, entries
+                        print("can't parse:", line, entries)
         except:
-            print "can't read parameters file"
+            print("can't read parameters file")
     
     def load_OD_data(self):
         if not os.path.exists(self.lock_file):
@@ -115,13 +115,13 @@ class morbidostat_monitor(object):
                     if cycle<len(OD_file_list):
                         self.OD[self.ODs_per_cycle*cycle:self.ODs_per_cycle*(cycle+1),:]=np.loadtxt(fname)
                     else:
-                        print "Cycle out of range"
+                        print("Cycle out of range")
                 if ncurr:
                     self.OD[-ncurr:,:] = current_cycle
             else:
-                print "no OD data"
+                print("no OD data")
         else:
-            print "data locked"
+            print("data locked")
 
 
     def load_cycle_data(self):
@@ -132,13 +132,13 @@ class morbidostat_monitor(object):
                 self.growth_rate_estimate = np.loadtxt(self.data_dir+'growth_rate_estimates.txt')
                 self.OD_estimate = np.loadtxt(self.data_dir+'cycle_OD_estimate.txt')
             except:
-                print "Cannot read cycle data"
+                print("Cannot read cycle data")
                 self.drug_concentration = np.zeros((2,len(self.vials)))
                 self.temperature = np.zeros((2,3))
                 self.growth_rate_estimate = np.zeros((2,2))
                 self.OD_estimate = np.zeros((2,2))
         else:
-            print "data locked"
+            print("data locked")
 
 
     def init_data_plot(self):
@@ -146,7 +146,7 @@ class morbidostat_monitor(object):
         this function sets up the plot of the OD and the antibiotic concentration
         in each of the 
         '''
-        print "init figure"
+        print("init figure")
         # there is a subplot for each vial which share axis. hence they are stacked
         n_cols = 3 # subplots are arranged in rows of 3
         n_rows = int(np.ceil(1.0*self.n_vials/n_cols))+1
@@ -239,10 +239,10 @@ if __name__ == '__main__':
         morb_monitor = morbidostat_monitor(sys.argv[1])
         plt.show()
         morb_monitor.update_all()
-        print "to refresh, type morb_monitor.update_all()"
-        print "to select displayed time window, set morb_monitor.data_range = #seconds to view"
-        print "and refresh"
+        print("to refresh, type morb_monitor.update_all()")
+        print("to select displayed time window, set morb_monitor.data_range = #seconds to view")
+        print("and refresh")
         #time.sleep(3)
         #morb_monitor.start()
     else:
-        print "name of data directory required"
+        print("name of data directory required")

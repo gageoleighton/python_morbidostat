@@ -49,8 +49,8 @@ class morbidostat_monitor(object):
                 for line in params_file:
                     entries = line.split()
                     try:
-                        if entries[0]=='vials':
-                            self.__setattr__('vials', map(int, entries[1:]))
+                        if entries[0]=='vials:':
+                            self.__setattr__('vials', list(map(int, entries[1:])))
                             self.n_vials = len(self.vials)
                         elif entries[0]=='Experiment:':
                             self.__setattr__('experiment_name', entries[1])
@@ -246,3 +246,4 @@ if __name__ == '__main__':
         #morb_monitor.start()
     else:
         print("name of data directory required")
+        

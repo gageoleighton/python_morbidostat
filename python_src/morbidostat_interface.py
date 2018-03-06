@@ -1,5 +1,5 @@
 import morbidostat_experiment as morbi
-import Tkinter
+import tkinter as Tkinter
 import threading
 import sys
 
@@ -116,13 +116,13 @@ class set_up_dialog(Tkinter.Frame):
                                self.vial_selector.vial_selector_variables[vi].get()]
         elif self.morb.interrupted:
             # update some parameters:
-            print "update parameters at time ", self.morb.experiment_time()
+            print ("update parameters at time ", self.morb.experiment_time())
             new_experiment_length  = int(self.variables['experiment_duration'].get())
             if new_experiment_length>self.morb.experiment_duration:
                 cycles_to_add = (new_experiment_length-self.morb.experiment_duration)//self.morb.cycle_dt
                 if cycles_to_add>0:
                     self.morb.experiment_duration = new_experiment_length
-                    print "added", cycles_to_add, 'cycles. New experiment duration', self.morb.experiment_duration
+                    print ("added", cycles_to_add, 'cycles. New experiment duration', self.morb.experiment_duration)
                     self.morb.add_cycles_to_data_arrays(cycles_to_add)
             new_drug_conc = (float(self.variables['drugA_concentration'].get()),
                              float(self.variables['drugB_concentration'].get()))
@@ -148,8 +148,8 @@ class vial_selection_dialog(Tkinter.Frame):
         self.morb = morb
         self.vial_selector_variables = []
         # make a list of Tkinter.IntVar and set them with the current active vials 
-        for xi in xrange(5):
-            for yi in xrange(3):
+        for xi in range(5):
+            for yi in range(3):
                 vi= xi*3+yi
                 self.vial_selector_variables.append(Tkinter.IntVar())
                 self.vial_selector_variables[-1].set(int(vi in self.morb.vials))
@@ -164,8 +164,8 @@ class vial_selection_dialog(Tkinter.Frame):
         vial_selector_frame.pack()
 
         vial_selector_buttons = []
-        for xi in xrange(5):
-            for yi in xrange(3):
+        for xi in range(5):
+            for yi in range(3):
                 vi= xi*3+yi
                 vial_selector_buttons.append(Tkinter.Checkbutton
                                                   (vial_selector_frame, text = str(vi+1),
@@ -246,7 +246,7 @@ class morbidostat_interface(Tkinter.Frame):
             set_up_dialog_window = set_up_dialog(self.morb)
             self.master.wait_window(set_up_dialog_window.top)
         else:
-            print "cannot update parameters while running"
+            print ("cannot update parameters while running")
 
     def open_experiment_type_selector(self):
         '''
@@ -256,7 +256,7 @@ class morbidostat_interface(Tkinter.Frame):
             experiment_selector_dialog = experiment_selector(self.morb)
             self.master.wait_window(experiment_selector_dialog.top)
         else:
-            print "cannot update parameters while running"
+            print ("cannot update parameters while running")
 
 
     def quit(self):
@@ -337,7 +337,7 @@ class morbidostat_interface(Tkinter.Frame):
         '''
         format seconds into a human readable string
         '''
-	nsec=int(nsec)
+        nsec=int(nsec)
         hours = nsec//3600
         minutes = nsec//60 - hours*60
         seconds = nsec-60*minutes-hours*3600
@@ -453,11 +453,10 @@ if __name__ == '__main__':
     if len(sys.argv)==2:
         dirname = sys.argv[1]
         if not os.path.exists(dirname):
-            print "argument is not a valid directory"
+            print ("argument is not a valid directory")
         else:
             mymorb.load_parameters_file(dirname.rstrip('/')+'/parameters.dat')
             mymorb.restart_from_file = dirname
     gui_thread = threading.Thread(target = run_GUI, args = (mymorb,))
     gui_thread.start()
     
-

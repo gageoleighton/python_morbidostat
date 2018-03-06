@@ -410,22 +410,22 @@ class morbidostat(object):
 
     def write_parameters_file(self, ):
         with open(self.base_name+'/parameters.dat', 'w') as params_file:
-            params_file.write('vials\t'+'\t'.join(map(str,self.vials))+'\n')
-            params_file.write('Experiment:\t'+self.experiment_name+' type: '+self.experiment_type+'\n')
-            params_file.write('Strain:\t'+self.bug+'\n')
-            params_file.write('Drugs:\t'+self.drugA+'\t'+self.drugB+'\n')
-            params_file.write('drug_concentrations:\t'+str(self.drugA_concentration)+'\t'+str(self.drugB_concentration)+'\n')
-            params_file.write('cycle_duration:\t'+str(self.cycle_dt)+'\n')
-            params_file.write('measurements/cycle:\t'+str(self.ODs_per_cycle)+'\n')
-            params_file.write('OD_dt:\t'+str(self.OD_dt)+'\n')
-            params_file.write('experiment_start:\t'+str(self.experiment_start)+'\n')
-            params_file.write('experiment_duration:\t'+str(self.experiment_duration)+'\n')
-            params_file.write('AB_switch_conc:\t'+str(self.AB_switch_conc)+'\n')
-            params_file.write('max_AB_fold_increase:\t'+str(self.max_AB_fold_increase)+'\n')
-            params_file.write('feedback_time_scale:\t'+str(self.feedback_time_scale)+'\n')
-            params_file.write('anticipation_threshold:\t'+str(self.anticipation_threshold)+'\n')
-            params_file.write('saturation_threshold:\t'+str(self.saturation_threshold)+'\n')
-            params_file.write('dilution_threshold:\t'+str(self.dilution_threshold)+'\n')
+            params_file.write('vials:\t'+'\t'.join(map(str,self.vials))+'\r\n')
+            params_file.write('Experiment:\t'+self.experiment_name+' type: '+self.experiment_type+'\r\n')
+            params_file.write('Strain:\t'+self.bug+'\r\n')
+            params_file.write('Drugs:\t'+self.drugA+'\t'+self.drugB+'\r\n')
+            params_file.write('drug_concentrations:\t'+str(self.drugA_concentration)+'\t'+str(self.drugB_concentration)+'\r\n')
+            params_file.write('cycle_duration:\t'+str(self.cycle_dt)+'\r\n')
+            params_file.write('measurements/cycle:\t'+str(self.ODs_per_cycle)+'\r\n')
+            params_file.write('OD_dt:\t'+str(self.OD_dt)+'\r\n')
+            params_file.write('experiment_start:\t'+str(self.experiment_start)+'\r\n')
+            params_file.write('experiment_duration:\t'+str(self.experiment_duration)+'\r\n')
+            params_file.write('AB_switch_conc:\t'+str(self.AB_switch_conc)+'\r\n')
+            params_file.write('max_AB_fold_increase:\t'+str(self.max_AB_fold_increase)+'\r\n')
+            params_file.write('feedback_time_scale:\t'+str(self.feedback_time_scale)+'\r\n')
+            params_file.write('anticipation_threshold:\t'+str(self.anticipation_threshold)+'\r\n')
+            params_file.write('saturation_threshold:\t'+str(self.saturation_threshold)+'\r\n')
+            params_file.write('dilution_threshold:\t'+str(self.dilution_threshold)+'\r\n')
             params_file.write('dilution_factor:\t'+str(self.dilution_factor))
 
     def load_parameters_file(self, fname):
@@ -686,7 +686,7 @@ class morbidostat(object):
         self.morb.switch_light(True) # switch light on
         time.sleep(1.0*self.second)  # sleep for one second to allow for heating of LEDs
 
-        index_vial_pairs = zip(range(len(self.vials)), self.vials)
+        index_vial_pairs = list(zip(range(len(self.vials)), self.vials))
         tmp_OD_measurements = np.zeros((self.n_reps, len(self.vials)))
         for rep in range(self.n_reps):
             if debug:
@@ -696,7 +696,7 @@ class morbidostat(object):
                 if debug:
                      print (format(tmp_OD_measurements[rep, vi], '0.3f'))
             if debug:
-	            print ()
+                print ()
         self.last_OD_measurements[self.OD_measurement_counter, :-1] = np.median(tmp_OD_measurements, axis=0)
         print ("OD:", ' '.join(map(str,np.round(self.last_OD_measurements[self.OD_measurement_counter, :],3))))
         self.last_OD_measurements[self.OD_measurement_counter,-1]=t
@@ -868,4 +868,3 @@ class morbidostat(object):
             print ("dilute vial ",vial,'with', np.round(volume_to_add,3), \
                 'previous OD', np.round(self.final_OD_estimate[self.cycle_counter,vi],3))
             self.decisions[self.cycle_counter,vi] = volume_to_add
-

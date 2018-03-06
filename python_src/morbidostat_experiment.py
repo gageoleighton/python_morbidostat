@@ -32,11 +32,11 @@ def calibrate_OD(vials = None):
     all_cycles_measured = False
     while all_cycles_measured==False:
         while no_valid_standard:
-            s = raw_input("Enter OD of standard [q to quit]: ")
+            s = input("Enter OD of standard [q to quit]: ")
             if s=='q':
                 print("Aborting calibration")
-		all_cycles_measured = True
-		break
+                all_cycles_measured = True
+                break
             try:
                 cur_OD = float(s)
                 no_valid_standard=False
@@ -47,11 +47,10 @@ def calibrate_OD(vials = None):
             ODs.append(cur_OD)
             voltages.append(np.zeros(len(vials)))
             for vi,vial in enumerate(vials):
-                OKstr = raw_input("Place OD standard in receptible "+str(vial+1)+
-                                  ", press enter when done")
+                OKstr = input("Place OD standard in receptible "+str(vial+1)+", press enter when done")
                 time.sleep(0.001)  #delay for 1 second to allow for heating of the diode
                 voltages[-1][vi] = calibration_morb.measure_voltage(vial, switch_light_off=True)[0]
-                print vial, "measurement ", voltages[-1][vi]
+                print (vial, "measurement ", voltages[-1][vi])
             no_valid_standard=True
 
     if len(ODs)>1:
@@ -100,7 +99,7 @@ def calibrate_pumps(pump_type, vials = None, dt = 10):
     calibration_morb = morb.morbidostat()
     print("Upon pressing enter, each pump will be run for "+str(dt)+" seconds.")
     print("Before each pump, you will be prompted for the weight of the current set-up.")
-    s = raw_input("press enter to start, q to stop: ")
+    s = input("press enter to start, q to stop: ")
     if len(s)>0:
         print("Aborting calibration")
         return
@@ -110,7 +109,7 @@ def calibrate_pumps(pump_type, vials = None, dt = 10):
     for vi,vial in enumerate(vials):
         no_weight = True
         while no_weight:
-            s = raw_input('current weight: ')
+            s = input('current weight: ')
             try:
                 weight[vi] =float(s)
                 no_weight = False
@@ -121,7 +120,7 @@ def calibrate_pumps(pump_type, vials = None, dt = 10):
     # get final weight
     no_weight = True
     while no_weight:
-        s = raw_input('final weight: ')
+        s = input('final weight: ')
         try:
             weight[-1] =float(s)
             no_weight = False
@@ -140,7 +139,7 @@ def calibrate_pumps_parallel(pump_type, vials = None, dt = 10):
     '''
     if vials is None:
         vials = range(15)
-    s = raw_input("press enter to start, q to stop: ")
+    s = input("press enter to start, q to stop: ")
     if len(s)>0:
         print("Aborting calibration")
         return
@@ -150,7 +149,7 @@ def calibrate_pumps_parallel(pump_type, vials = None, dt = 10):
     for vi,vial in enumerate(vials):
         no_weight = True
         while no_weight:
-            s = raw_input('weight of vial '+str(vial+1)+': ')
+            s = input('weight of vial '+str(vial+1)+': ')
             try:
                 weight[vi] =float(s)
                 no_weight = False
@@ -189,7 +188,7 @@ def wash_tubing(pumps=None, bleach_runtime=None, vials=None):
         # bleach
         print("Connect bleach reservoir to " +str(pump) 
               + " pumps and spray ethanol on all Luer connectors.")
-        s = raw_input("Press enter to run pumps for " + str(bleach_runtime) + " seconds.")
+        s = input("Press enter to run pumps for " + str(bleach_runtime) + " seconds.")
         wash_morb.run_all_pumps(pump, bleach_runtime)
         print("Wait until pumping is finished...")
         time.sleep(bleach_runtime)
@@ -198,7 +197,7 @@ def wash_tubing(pumps=None, bleach_runtime=None, vials=None):
         time.sleep(wait_time)
         # sterile water
         print("Swap bleach reservoir with steril water reservoir: " +str(pump))
-        s = raw_input("Press enter to run pumps for 5 min.")
+        s = input("Press enter to run pumps for 5 min.")
         wash_morb.run_all_pumps(pump, wash_time)
         wash_morb.morb.run_waste_pump(bleach_runtime + wash_time)
         #time.sleep(wash_time)
@@ -208,7 +207,7 @@ def wash_tubing(pumps=None, bleach_runtime=None, vials=None):
     for pump in pumps:
         # ethanol
         print("Swap steril water reservoir with ethanol reservoir: " +str(pump))
-        s = raw_input("Press enter to run pumps for 5 min.")
+        s = input("Press enter to run pumps for 5 min.")
         wash_morb.run_all_pumps(pump, wash_time)
         wash_morb.morb.run_waste_pump(wash_time)
 
@@ -220,7 +219,7 @@ def wash_tubing(pumps=None, bleach_runtime=None, vials=None):
     for pumps in pumps:
         # sterile water
         print("Swap ethanol reservoir with steril water reservoir: " +str(pump))
-        s = raw_input("Press enter to run pumps for 5 min.")
+        s = input("Press enter to run pumps for 5 min.")
         wash_morb.run_all_pumps(pump, wash_time)
         wash_morb.morb.run_waste_pump(wash_time)
     
@@ -241,7 +240,7 @@ def pump_solutions(pumps=None, vials=None):
     wash_morb = morbidostat(vials=vials)
 
     print("Connect solutions to pumps.")
-    s = raw_input("Press enter to run pumps.")
+    s = input("Press enter to run pumps.")
 
     for pump in pumps:
         wash_morb.run_all_pumps(pump, run_time)
@@ -364,15 +363,15 @@ class morbidostat(object):
         # file names
         tmp_time = time.localtime()
         if self.restart_from_file is None or os.path.exists(self.restart_from_file)==False:
-            self.base_name = morb.morb_path+'data/'+"".join([format(v,'02d') for v in
+            self.base_name = morb.morb_path+'/data/'+"".join([format(v,'02d') for v in
                                                              [tmp_time.tm_year, tmp_time.tm_mon, tmp_time.tm_mday]])\
                 + '_'.join(['',self.experiment_name,self.bug, self.drugA,self.drugB, self.experiment_type])+'/'
             if os.path.exists(self.base_name):
-                print self.base_name+"directory already exists"
+                print (self.base_name+"directory already exists")
             else:
-                os.mkdir(self.base_name)
+                os.makedirs(self.base_name)
             if not os.path.exists(self.base_name+'/OD'):
-                os.mkdir(self.base_name+'OD/')
+                os.makedirs(self.base_name+'OD/')
         else:
             self.base_name = self.restart_from_file.rstrip('/')+'/'
             
@@ -474,11 +473,11 @@ class morbidostat(object):
                         elif entries[0]=='dilution_threshold:':
                             self.__setattr__('dilution_threshold', float(entries[-1]))
                         else:
-                            print "unrecognized parameter entry:",line, entries
+                            print ("unrecognized parameter entry:",line, entries)
                     except:
-                        print "can't parse:", line, entries
+                        print ("can't parse:", line, entries)
         except:
-            print "can't read parameters file"
+            print ("can't read parameters file")
 
 
     def change_drug_concentrations(self, Aconc, Bconc):
@@ -536,7 +535,7 @@ class morbidostat(object):
             self.interrupted=False
             self.write_parameters_file()
         else:
-            print "experiment already running"
+            print ("experiment already running")
 
     def stop_experiment(self):
         '''
@@ -544,10 +543,10 @@ class morbidostat(object):
         '''
         self.stopped = True
         if self.running and self.cycle_counter<self.n_cycles:
-            print "Stopping the cycle thread, waiting for cycle to finish"
+            print ("Stopping the cycle thread, waiting for cycle to finish")
             self.cycle_thread.join()
 
-        print "experiment has finished. disconnecting the morbidostat"
+        print ("experiment has finished. disconnecting the morbidostat")
         self.morb.disconnect()
         self.running=False
         
@@ -560,11 +559,11 @@ class morbidostat(object):
         if self.running:            
             self.interrupted = True
             if self.cycle_counter<self.n_cycles and self.running:
-                print "Stopping the cycle thread, waiting for cycle to finish"
+                print ("Stopping the cycle thread, waiting for cycle to finish")
                 self.cycle_thread.join()
-            print "recording stopped, safe to disconnect"
+            print ("recording stopped, safe to disconnect")
         else:
-            print "experiment not running"
+            print ("experiment not running")
 
     def reset_concentrations(self):
         '''
@@ -573,9 +572,9 @@ class morbidostat(object):
         '''
         if self.interrupted:
             self.vial_drug_concentration[self.cycle_counter,:-1]=0
-            print "vial concentrations set to zero"
+            print ("vial concentrations set to zero")
         else:
-            print "experiment has to be interrupted to reset vial concentrations"
+            print ("experiment has to be interrupted to reset vial concentrations")
 
     def resume_experiment(self):
         '''
@@ -588,9 +587,9 @@ class morbidostat(object):
             self.interrupted=False
             self.running = True
             self.cycle_thread.start()
-            print "morbidostat restarted in cycle", self.cycle_counter
+            print ("morbidostat restarted in cycle", self.cycle_counter)
         else:
-            print "experiment is not interrupted"
+            print ("experiment is not interrupted")
 
     def run_all_pumps(self, pump_type, run_time):
         '''
@@ -604,9 +603,9 @@ class morbidostat(object):
         loop over cycles, call the morbidostat cycle function
         '''
         initial_cycle_count = self.cycle_counter
-        for ci in xrange(initial_cycle_count, self.n_cycles):
+        for ci in range(initial_cycle_count, self.n_cycles):
             if debug:
-                print "#####################\n# Cycle",ci,"\n##################"
+                print ("#####################\n# Cycle",ci,"\n##################")
             tmp_cycle_start = time.time()
             self.morbidostat_cycle()
             self.save_data()
@@ -615,7 +614,7 @@ class morbidostat(object):
             if remaining_time>0:
                 time.sleep(remaining_time*self.second)
                 if debug:
-                    print "run_morbidostat: remaining time", remaining_time
+                    print ("run_morbidostat: remaining time", remaining_time)
             else:
                 print("run_morbidostat: remaining time is negative"+str(remaining_time))
             if self.stopped or self.interrupted:
@@ -646,7 +645,7 @@ class morbidostat(object):
         elif self.experiment_type==GROWTH_RATE_EXPERIMENT:
             pass
         else:
-            print "unknown experiment type:", self.experiment_type
+            print ("unknown experiment type:", self.experiment_type)
         self.morb.wait_until_mixed()
         # remove the max of the added volumes plus some safety margin. 
         # this will suck air in some vials. 
@@ -661,9 +660,9 @@ class morbidostat(object):
         acquires all measurents for a given OD counter is incremented in parent
         '''
         self.last_OD_measurements[:] = 0
-        for oi in xrange(self.ODs_per_cycle):
+        for oi in range(self.ODs_per_cycle):
             if debug:
-                print "OD measurement:",self.OD_measurement_counter
+                print ("OD measurement:",self.OD_measurement_counter)
             tmp_OD_measurement_start = time.time()
             self.measure_OD()
             self.OD_measurement_counter+=1
@@ -689,17 +688,17 @@ class morbidostat(object):
 
         index_vial_pairs = zip(range(len(self.vials)), self.vials)
         tmp_OD_measurements = np.zeros((self.n_reps, len(self.vials)))
-        for rep in xrange(self.n_reps):
+        for rep in range(self.n_reps):
             if debug:
-                print "OD rep",rep,
+                print ("OD rep",rep)
             for vi,vial in index_vial_pairs[::(1-2*(rep%2))]:
                 tmp_OD_measurements[rep, vi] = self.morb.measure_OD(vial, 1, 0, False)[0]
                 if debug:
-                     print format(tmp_OD_measurements[rep, vi], '0.3f'),
+                     print (format(tmp_OD_measurements[rep, vi], '0.3f'))
             if debug:
-	            print 
+	            print ()
         self.last_OD_measurements[self.OD_measurement_counter, :-1] = np.median(tmp_OD_measurements, axis=0)
-        print "OD:", ' '.join(map(str,np.round(self.last_OD_measurements[self.OD_measurement_counter, :],3)))
+        print ("OD:", ' '.join(map(str,np.round(self.last_OD_measurements[self.OD_measurement_counter, :],3))))
         self.last_OD_measurements[self.OD_measurement_counter,-1]=t
         self.morb.switch_light(False)
 
@@ -719,12 +718,12 @@ class morbidostat(object):
                 self.growth_rate_estimate[self.cycle_counter,vi] = tmp_regress[0]
                 self.final_OD_estimate[self.cycle_counter,vi] = np.exp(tmp_regress[1])
                 if debug:
-                    print "growth vial",vial, tmp_regress[0], tmp_regress[1]
+                    print ("growth vial",vial, tmp_regress[0], tmp_regress[1])
                 if tmp_regress[2]<0.5:
-                    print "morbidostat_experiment: bad fit, regression:"
+                    print ("morbidostat_experiment: bad fit, regression:")
                     for q,x in zip(['slope', 'intercept', 'r-val','p-val'], np.round(tmp_regress[:4],4)): 
-                        print q,'\t',x
-                    print
+                        print (q,'\t',x)
+                    print ()
             self.growth_rate_estimate[self.cycle_counter,-1]=self.experiment_time()
             self.final_OD_estimate[self.cycle_counter,-1]=self.experiment_time()
             
@@ -736,12 +735,12 @@ class morbidostat(object):
             # prevent increase of antibiotics beyond a factor of max_AB_fold_increase since base line
             if conc<self.AB_switch_conc*min(self.drugA_concentration,self.drugB_concentration):
                 tmp_decision = dilute_w_drugA if self.drugA_concentration<self.drugB_concentration else dilute_w_drugB
-                print "dilute with low concentration (now, previous, mic):", conc, prev_conc, mic
+                print ("dilute with low concentration (now, previous, mic):", conc, prev_conc, mic)
             else:
                 tmp_decision = dilute_w_drugB if self.drugA_concentration<self.drugB_concentration else dilute_w_drugA
-                print "dilute with high concentration (now, previous, mic):", conc, prev_conc, mic
+                print ("dilute with high concentration (now, previous, mic):", conc, prev_conc, mic)
         else:
-            print "dilute with medium since drug concentration recently increased (now, previous, mic):", conc, prev_conc, mic
+            print ("dilute with medium since drug concentration recently increased (now, previous, mic):", conc, prev_conc, mic)
             tmp_decision = dilute_w_medium
         return tmp_decision
 
@@ -761,8 +760,8 @@ class morbidostat(object):
         excess_OD = (finalOD-self.target_OD)
         # if neither OD nor growth are above thresholds, dilute with happy fluid
 
-        print "vial",vial
-        print expected_growth, self.target_OD*self.max_growth_fraction
+        print ("vial",vial)
+        print (expected_growth, self.target_OD*self.max_growth_fraction)
 
 
         if finalOD<self.dilution_threshold:  # below the low threshold: let them grow, do nothing
@@ -798,7 +797,7 @@ class morbidostat(object):
         for vi, vial in enumerate(self.vials):
             # check manual override of decision
             if self.override:
-                print 'Specify decision:\n(1) do nothing\n(2) dilute with medium\n(3) dilute with drug A\n(4) dilute with drug B'
+                print ('Specify decision:\n(1) do nothing\n(2) dilute with medium\n(3) dilute with drug A\n(4) dilute with drug B')
                 s = input('Input: ')
                 if s==1:
                     tmp_decision = do_nothing
@@ -843,14 +842,14 @@ class morbidostat(object):
             # save time of dilution
             self.vial_drug_concentration[self.cycle_counter+1,-1]=self.experiment_time()
                 
-        print 'Cycle:',self.cycle_counter, self.experiment_time()
-        print 'Growth rate (rel to target):',
-        for x in self.growth_rate_estimate[self.cycle_counter,:-1]: print '\t',np.round(x/self.target_growth_rate,2),
-        print '\nOD (rel to target):\t',
-        for x in self.final_OD_estimate[self.cycle_counter,:-1]: print '\t',np.round(x/self.target_OD,2),
-        print '\nDecision:\t\t',
-        for x in self.decisions[self.cycle_counter,:-1]: print '\t',x,
-        print '\n'
+        print ('Cycle:',self.cycle_counter, self.experiment_time())
+        print ('Growth rate (rel to target):')
+        for x in self.growth_rate_estimate[self.cycle_counter,:-1]: print ('\t',np.round(x/self.target_growth_rate,2))
+        print ('\nOD (rel to target):\t')
+        for x in self.final_OD_estimate[self.cycle_counter,:-1]: print ('\t',np.round(x/self.target_OD,2))
+        print ('\nDecision:\t\t')
+        for x in self.decisions[self.cycle_counter,:-1]: print ('\t',x)
+        print ('\n')
 
     def dilute_to_OD(self):
         '''
@@ -866,8 +865,7 @@ class morbidostat(object):
                                        self.target_OD)*self.culture_volume/self.target_OD)
                 self.added_volumes[vi]=volume_to_add
                 self.morb.inject_volume(dilute_w_medium[0], vial, volume_to_add)
-            print "dilute vial ",vial,'with', np.round(volume_to_add,3), \
-                'previous OD', np.round(self.final_OD_estimate[self.cycle_counter,vi],3)
+            print ("dilute vial ",vial,'with', np.round(volume_to_add,3), \
+                'previous OD', np.round(self.final_OD_estimate[self.cycle_counter,vi],3))
             self.decisions[self.cycle_counter,vi] = volume_to_add
-
 

@@ -25,7 +25,7 @@ vials_to_pins_assignment = [0,5,10,1,6,11,2,7,12,3,8,13,4,9,14]
 
 
 ####
-morb_path = '/home/morbidostat/morbidostat/python_arduino/'
+morb_path = os.getcwd() #'/home/morbidostat/morbidostat/python_arduino/'
 
 ############
 # load calibration parameters
@@ -40,30 +40,30 @@ for pump_type in pumps:
             try:
                 pump_calibration_params[pump_type] = np.loadtxt(fname)
             except:
-                print "error opening pump calibration, all pump calibration parameters set to 2.4ml/min"
+                print ("error opening pump calibration, all pump calibration parameters set to 2.4ml/min")
                 pump_calibration_params[pump_type] = 0.04*np.ones(15)
         else:
-            print "no pump calibration file "+fname+", all pump calibration parameters set to 2.4 ml/min"
+            print ("no pump calibration file "+fname+", all pump calibration parameters set to 2.4 ml/min")
             pump_calibration_params[pump_type] = 0.04*np.ones(15)
     else:
         if os.path.isfile(fname):
             try:
                 pump_calibration_params[pump_type] = np.array([np.loadtxt(fname)])
             except:
-                print "error opening pump calibration, all pump calibration parameters set to 2.4ml/min"
+                print ("error opening pump calibration, all pump calibration parameters set to 2.4ml/min")
                 pump_calibration_params[pump_type] = np.array([0.04])
         else:
-            print "no pump calibration file "+fname+", all pump calibration parameters set to 2.4 ml/min"
+            print ("no pump calibration file "+fname+", all pump calibration parameters set to 2.4 ml/min")
             pump_calibration_params[pump_type] = np.array([0.04])
 
 if os.path.isfile(OD_calibration_file_name):
     try:
         voltage_to_OD_params = np.loadtxt(OD_calibration_file_name)
     except:
-        print "error opening OD calibration file, all OD parameters set to zeros"
+        print ("error opening OD calibration file, all OD parameters set to zeros")
         voltage_to_OD_params = np.zeros((15,2))
 else:
-    print "no OD calibration file, all OD parameters set to zero"
+    print ("no OD calibration file, all OD parameters set to zero")
     voltage_to_OD_params = np.zeros((15,2))
 
 #############
@@ -80,7 +80,7 @@ class morbidostat:
 
     def atomic_serial_write(self,msg):
         with lok:
-            self.ser.write(msg)
+            self.ser.write(msg.encode())
         return len(msg)
     def atomic_serial_readline(self):
         with lok:
@@ -119,11 +119,11 @@ class morbidostat:
             if pump<len(pump_calibration_params[pump_type]):
                 return volume/pump_calibration_params[pump_type][pump]
             else:
-                print "invalid pump number", pump, 'only ',len(pump_calibration_params[pump_type]), \
-                    'calibration parameters'
+                print ("invalid pump number", pump, 'only ',len(pump_calibration_params[pump_type]), \
+                    'calibration parameters')
                 return 0
         else:
-            print "invalid pump_type", pump_type, 'not in', pump_calibration_params.keys()
+            print ("invalid pump_type", pump_type, 'not in', pump_calibration_params.keys())
             return 0
 
 
@@ -133,7 +133,7 @@ class morbidostat:
         pump off threads
         '''
         tmp_last_pump_off_time = 0
-        for k,t in self.pump_off_threads.iteritems():
+        for k,t in self.pump_off_threads.items():
             t.join()
         time.sleep(self.mixing_time)
 
@@ -143,9 +143,9 @@ class morbidostat:
         '''
         if self.morbidostat_OK and self.ser.isOpen():
             # wait for all threads to finish
-            while any([t.is_alive() for k,t in self.pump_off_threads.iteritems()]):
+            while any([t.is_alive() for k,t in self.pump_off_threads.items()]):
                 print("\n Before disconnecting waiting for ")
-                for k,t in self.pump_off_threads.iteritems():
+                for k,t in self.pump_off_threads.items():
                     if t.is_alive():
                         print(str(k)+ "\tto finish") 
                 time.sleep(1)
@@ -164,7 +164,7 @@ class morbidostat:
 
     def voltage_to_OD(self,vial, mean_val, std_val):
         if mean_val is None:
-            print "got None instead of an AD output for vial",vial
+            print ("got None instead of an AD output for vial",vial)
             return 0,0
         else:
             ODval = voltage_to_OD_params[vial,0]*mean_val+voltage_to_OD_params[vial,1]
@@ -213,10 +213,10 @@ class morbidostat:
             time_delay = ((n_measurements-1)*dt + 10.0)*0.001  #seconds
             time.sleep(time_delay)
             if debug:
-                print self.ser.inWaiting()
+                print (self.ser.inWaiting())
             measurement = self.atomic_serial_readline()
             if debug:
-                print(str(time.time())+" in: "+measurement) 
+                print(str(time.time())+" in: "+measurement.decode()) 
 
             if switch_light_off:  
                 self.switch_light(False) # switch IR LEDs off
@@ -313,7 +313,7 @@ class morbidostat:
         # wait for reply and verify
         response = self.atomic_serial_readline()
         if debug:
-            print(str(time.time())+" in: "+response) 
+            print(str(time.time())+" in: "+response.decode()) 
 
         # parse the response and verify that the pump was set to the correct state
         entries = response.split()
@@ -323,7 +323,7 @@ class morbidostat:
                 print(response)
         else:
             print("switch_pin received bad response:")
-            print response
+            print (response)
 
     def switch_light(self, state):
         '''
@@ -359,13 +359,13 @@ class morbidostat:
         # wait for reply and verify
         response = self.atomic_serial_readline()
         if debug:
-            print(str(time.time())+" in: "+response) 
+            print(str(time.time())+" in: "+response.decode()) 
 
         entries = response.split()
         temp1, temp2 = float(entries[1]), float(entries[2])
         self.temperatures = (temp1, temp2)
         if debug:
-            print "temperatures:",self.temperatures
+            print ("temperatures:",self.temperatures)
         if switch_light_off:
             self.switch_light(False)
 
@@ -384,7 +384,7 @@ def measure_self_heating(morb, vials = range(15), total_time = 180, dt = 1):
     for ti, t in enumerate(np.arange(0,total_time, dt)):
         time.sleep(max(0,t-(time.time()-t_start)))
         measurements = []
-        print t, time.time()
+        print (t, time.time())
         for vi,vial in enumerate(vials):
             measurements.append(morb.measure_voltage(vial, n_measurements=1,
                                                      dt=0,switch_light_off=False)[0])
@@ -404,7 +404,7 @@ def measure_recovery(morb, vials = range(15), total_time = 180, dt = 5):
     for ti, t in enumerate(np.arange(0,total_time, dt)):
         time.sleep(max(0,t-(time.time()-t_start)))
         measurements = []
-        print t, time.time()
+        print (t, time.time())
         for vi,vial in enumerate(vials):
             measurements.append(morb.measure_voltage(vial,dt=0, switch_light_off=False)[0])
         morb.switch_light(False)        
@@ -420,7 +420,7 @@ def take_temperature_profile(morb, total_time = 600, dt=10):
         morb.measure_temperature()
         time.sleep(2)
         time.sleep(max(0,t-(time.time()-t_start)))
-        print t, morb.temperatures
+        print (t, morb.temperatures)
         if ti<temperatures.shape[0]:
             temperatures[ti,0]=t
             temperatures[ti,1:] = morb.temperatures

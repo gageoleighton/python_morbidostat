@@ -9,19 +9,19 @@ lok=threading.Lock()
 debug = True
 baudrate = 9600
 # arduino pin controlling the IR LEDs via a relais
-light_switch = 22 
-thermometer_pin = 4
-suction_pump = 3
+light_switch = 12
+thermometer_pin = 2
+suction_pump = 13
 # dictionary mapping pumps to pins, two pins required for steppers this defines the steps (direction will no change)
-pumps = {'drugA': [24,25,26,27,28,29,30,31,32] #[14,15,16,17,18,19, 12, 20,21,11,10,9,8,7,6],
-         'drugB': [33,34,35,36,37,38,39,40,41] #[30,31, 32, 33,34,35, 23, 36,37, 24,25, 26,27,28,29], 
-         'medium': [15,16,17,18,19,20,21,22,23] # [53,52,51,50,49,48, 45 , 47,46, 44,43,42,41,40,39],
+pumps = {'drugA': [26,27,28,29,30,31,32,33,34], #[14,15,16,17,18,19, 12, 20,21,11,10,9,8,7,6],
+         'drugB': [35,36,37,38,39,40,41,42,43], #[30,31, 32, 33,34,35, 23, 36,37, 24,25, 26,27,28,29], 
+         'medium': [17,18,19,20,21,22,23,24,25], # [53,52,51,50,49,48, 45 , 47,46, 44,43,42,41,40,39],
 #         'medium': [41,40,39,44,43,42,45,47,46,50,49,48,53,52,51],
          'waste': suction_pump}
 
 
 #vials_to_pins_assignment = [10,5,0, 11,6,1,12,7,2,13,8,3,14,9,4]
-vials_to_pins_assignment = [6,7,8,9,10,11,12,13,14] # These are the IR sensor pins, Reduced to 9 vials
+vials_to_pins_assignment = [3,4,5,6,7,8,9,10,11] # These are the IR sensor pins, Reduced to 9 vials
 
 
 ####
@@ -271,8 +271,6 @@ class morbidostat:
             if run_steps>0:
                 # switch pump on
                 self.switch_pin(digital_pin, run_steps)
-            else:
-                # Ensure that the pump is not running?
         else:
             print("Serial port is not open")
 
@@ -287,8 +285,6 @@ class morbidostat:
             if run_steps>0:
                 # switch pump on
                 self.switch_pin(digital_pin, run_steps)
-            else:
-                # Ensure that the pump is not running?
         else:
             print("Serial port is not open")
 
@@ -321,6 +317,34 @@ class morbidostat:
             print("switch_pin received bad response:")
             print (response)
 
+    def switch_led(self, pin_number, state):
+        '''
+        switch the specified pin to the specified state
+        '''
+        if state:
+            command_str = 'L'+'{number:0{width}d}'.format(number=pin_number, width=2) + '1\n'
+        else:
+            command_str = 'L'+'{number:0{width}d}'.format(number=pin_number, width=2) + '0\n'
+        bytes_written = self.atomic_serial_write(command_str)
+
+        if debug:
+            print(str(time.time())+" out: "+command_str[:-1]+ ' bytes_written: '+str(bytes_written)) 
+
+        # wait for reply and verify
+        response = self.atomic_serial_readline()
+        if debug:
+            print(str(time.time())+" in: "+response.decode()) 
+
+        # parse the response and verify that the pump was set to the correct state
+        entries = response.split()
+        if len(entries)>2 and entries[0]=='L' and int(entries[1])==pin_number:
+            if (entries[2]=='1')!=state:
+                print("pin "+str(pin_number)+" in wrong state\nArduino response")
+                print(response)
+        else:
+            print("switch_pin received bad response:")
+            print (response)
+
     def switch_light(self, state):
         '''
         switch the light pin to the specified state
@@ -328,7 +352,7 @@ class morbidostat:
         #arduino high corresponds to open relais
         tmp_state = (1-state)==1
         if self.light_state!=state:
-            self.switch_pin(light_switch, tmp_state)
+            self.switch_led(light_switch, tmp_state)
             self.light_state = state
 
 

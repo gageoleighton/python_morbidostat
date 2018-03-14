@@ -7,13 +7,13 @@ Updated to reflect the control of a stepper
 
 #define motorSteps 200; // The number of steps per revolution
 
-const int dirPin = 5;
+// const int dirPin = 5;
 
 // Set the microstepping F = Full, H = Half, Q = Quarter, E = Eigth, S = Sixteenth
 char Microstep = 'F';
-const int MS1Pin = 2;
-const int MS2Pin = 3;
-const int MS3Pin = 4;
+const int MS1Pin = 14;
+const int MS2Pin = 15;
+const int MS3Pin = 16;
 
 int dt = 10;
 int step, pin_steps, digital_pin;
@@ -34,9 +34,12 @@ void setup()
   input_string.reserve(200);
   //set up digital out pins
   int digital_pin;
-  for (digital_pin=2; digital_pin<54; digital_pin++){
+  for (digital_pin=12; digital_pin<54; digital_pin++){
     pinMode(digital_pin, OUTPUT);
     digitalWrite(digital_pin, LOW);    
+  }
+  for (digital_pin=2; digital_pin< 12; digital_pin++){
+    pinMode(digital_pin, INPUT);
   }
   #if defined(Microstep)
       switch (Microstep[0]){
@@ -104,6 +107,23 @@ void switch_digital(){
   Serial.println(pin_steps);
 }
 
+void switch_led(){
+  int digital_pin = input_string.substring(1,3).toInt();
+  char pin_state = input_string[3];
+  if (pin_state=='1'){
+    digitalWrite(digital_pin, HIGH);
+  }else if (pin_state=='0'){
+    digitalWrite(digital_pin,LOW);
+  }else{
+    Serial.print("error: switch_digital() received bad pin state: ");
+    Serial.println(input_string);
+  }
+  Serial.print("D\t");
+  Serial.print(digital_pin);
+  Serial.print('\t');
+  Serial.println(pin_state);
+}
+
 void stepping_function(){
   for(step = 0; step < pin_steps; step++){
     digitalWrite(digital_pin, HIGH);
@@ -122,6 +142,7 @@ void loop()
     case 'D': {switch_digital(); break;} 
     case 'C': {start_temperature_conversion(); break;}
     case 'T': {read_temperature(); break;}
+    case 'L': {switch_led(); break;}
     default: {Serial.println("error: unknown command"); break;}
     }  
     input_string="";

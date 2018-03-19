@@ -1,2 +1,2 @@
 #!/bin/bash
-ipython3 python_src/morbidostat_interface_stepper.py -i
+ipython3 python_src/morbidostat_interface_stepper.py

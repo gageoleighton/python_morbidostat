@@ -96,16 +96,16 @@ class morbidostat:
         port_number=0
         while try_next:
             try:
-                self.ser = serial.Serial('/dev/ttyUSB'+str(port_number), baudrate, timeout = 1.0)
+                self.ser = serial.Serial('/dev/ttyACM'+str(port_number), baudrate, timeout = 1.0)
                 if self.ser.isOpen():
-                    print("Serial /dev/ttyUSB"+str(port_number)+" opened")
+                    print("Serial /dev/ttyACM"+str(port_number)+" opened")
                     # wait a second to let the serial port get up to speed
                     time.sleep(1)
                     self.morbidostat_OK = True
                     try_next=False
             except:
                 if port_number<10:
-                    print("Serial /dev/ttyUSB"+str(port_number)+" not available, trying next")
+                    print("Serial /dev/ttyACM"+str(port_number)+" not available, trying next")
                     try_next=True
                     port_number+=1
                 else:

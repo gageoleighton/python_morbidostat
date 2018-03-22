@@ -7,8 +7,6 @@ Updated to reflect the control of a stepper
 
 #define motorSteps 200; // The number of steps per revolution
 
-// const int dirPin = 5;
-
 // Set the microstepping F = Full, H = Half, Q = Quarter, E = Eigth, S = Sixteenth
 char Microstep = 'F';
 const int MS1Pin = 14;
@@ -18,6 +16,7 @@ const int MS3Pin = 16;
 int dt = 10;
 int step, pin_steps, digital_pin;
 int dir_pin = 13;
+int enable_pin = 11;
 String input_string="";
 boolean string_complete=false;
 
@@ -35,11 +34,11 @@ void setup()
   input_string.reserve(200);
   //set up digital out pins
   int digital_pin;
-  for (digital_pin=12; digital_pin<54; digital_pin++){
+  for (digital_pin=11; digital_pin<54; digital_pin++){
     pinMode(digital_pin, OUTPUT);
     digitalWrite(digital_pin, LOW);    
   }
-  for (digital_pin=2; digital_pin< 12; digital_pin++){
+  for (digital_pin=1; digital_pin< 11; digital_pin++){
     pinMode(digital_pin, INPUT);
   }
   #if defined(Microstep)

@@ -17,6 +17,7 @@ const int MS3Pin = 16;
 
 int dt = 10;
 int step, pin_steps, digital_pin;
+int dir_pin = 13;
 String input_string="";
 boolean string_complete=false;
 

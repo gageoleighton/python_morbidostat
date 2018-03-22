@@ -10,7 +10,7 @@ debug = True
 baudrate = 9600
 # arduino pin controlling the IR LEDs via a relais
 light_switch = 12
-thermometer_pin = 2
+thermometer_pin = 1
 suction_pump = 17
 # dictionary mapping pumps to pins, two pins required for steppers this defines the steps (direction will no change)
 pumps = {'drugA': [27,28,29,30,31,32,33,34,35], #[14,15,16,17,18,19, 12, 20,21,11,10,9,8,7,6],
@@ -21,7 +21,7 @@ pumps = {'drugA': [27,28,29,30,31,32,33,34,35], #[14,15,16,17,18,19, 12, 20,21,1
 
 
 #vials_to_pins_assignment = [10,5,0, 11,6,1,12,7,2,13,8,3,14,9,4]
-vials_to_pins_assignment = [3,4,5,6,7,8,9,10,11] # These are the IR sensor pins, Reduced to 9 vials
+vials_to_pins_assignment = [2,3,4,5,6,7,8,9,10] # These are the IR sensor pins, Reduced to 9 vials
 
 
 ####

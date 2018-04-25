@@ -1,22 +1,28 @@
+#include <Arduino.h>
+#include "A4988.h"
+
 /*
 Updated to reflect the control of a stepper
 */
 
 #include <OneWire.h>
-#include <Stepper.h>
 
-#define motorSteps 200; // The number of steps per revolution
+// using a 200-step motor (most common)
+#define MOTOR_STEPS 200
+#define RPM 20
+// configure the pins connected
+#define DIR 13
+int STEP;
+#define MS1 14
+#define MS2 15
+#define MS3 16
 
-// Set the microstepping F = Full, H = Half, Q = Quarter, E = Eigth, S = Sixteenth
-char Microstep = 'F';
-const int MS1Pin = 14;
-const int MS2Pin = 15;
-const int MS3Pin = 16;
+#define StepMode 1 // Define the stepper mode (microsteps) 1 (100% Torque), 2 (71% Torque), 4 (38% Torque), 8 (20% Torque), 16 (10% Torque)
+
+#define ENABLE 11
 
 int dt = 10;
 int step, pin_steps, digital_pin;
-int dir_pin = 13;
-int enable_pin = 11;
 String input_string="";
 boolean string_complete=false;
 
@@ -28,7 +34,6 @@ byte OneWireData[12];
 
 void setup()
 {
-
   //set up serial port and input buffer
   Serial.begin(9600);
   input_string.reserve(200);
@@ -41,24 +46,14 @@ void setup()
   for (digital_pin=1; digital_pin< 11; digital_pin++){
     pinMode(digital_pin, INPUT);
   }
-  #if defined(Microstep)
-      switch (Microstep[0]){
-      case 'F': {break;}
-      case 'H': {digitalWrite(MS1Pin, HIGH); break;}
-      case 'Q': {digitalWrite(MS2Pin, HIGH); break;}
-      case 'E': {digitalWrite(MS1Pin, HIGH); digitalWrite(MS2Pin, HIGH); break;}
-      case 'S': {digitalWrite(MS1Pin, HIGH); digitalWrite(MS2Pin, HIGH); digitalWrite(MS3Pin, HIGH); break;}
-      default: // This will leave a Full Steps
-      }
-  #endif
 }
 
 void measure_analog(){
   if (input_string.length()>11)
   {
     int iter;
-    float mean=0;
-    float var_sq=0;
+    float mean=0.0;
+    float var_sq=0.0;
     float val; 
     int analog_pin = input_string.substring(1,3).toInt();
     int n_measurements = input_string.substring(3,7).toInt();
@@ -72,7 +67,8 @@ void measure_analog(){
     mean /= (float)n_measurements;
     var_sq /= (float)n_measurements;
     var_sq -= mean*mean;
-    Serial.print("A\t");
+    Serial.print("A");
+    Serial.print('\t');
     Serial.print(analog_pin);
     Serial.print('\t');
     Serial.print(mean);
@@ -89,19 +85,24 @@ void measure_analog(){
 }
 
 void switch_digital(){
-  digital_pin = input_string.substring(1,3).toInt();
+  STEP = input_string.substring(1,3).toInt();
   Serial.println(digital_pin);
   pin_steps = input_string.substring(3,8).toInt();
   Serial.println(pin_steps);
+  A4988 stepper(MOTOR_STEPS, DIR, STEP, ENABLE, MS1, MS2, MS3);
   if (pin_steps>0){
-    stepping_function();
+  stepper.begin(RPM);
+  stepper.enable();
+  stepper.setMicrostep(StepMode);
+  stepper.move(StepMode * pin_steps);
   }else if (pin_steps=0){
     digitalWrite(digital_pin,LOW);
   }else{
     Serial.print("error: switch_digital() received bad pin state: ");
     Serial.println(input_string);
   }
-  Serial.print("D\t");
+  Serial.print("D");
+  Serial.print('\t');
   Serial.print(digital_pin);
   Serial.print('\t');
   Serial.println(pin_steps);
@@ -118,21 +119,13 @@ void switch_led(){
     Serial.print("error: switch_digital() received bad pin state: ");
     Serial.println(input_string);
   }
-  Serial.print("D\t");
+  Serial.print("D");
+  Serial.print('\t');
   Serial.print(digital_pin);
   Serial.print('\t');
   Serial.println(pin_state);
 }
 
-void stepping_function(){
-  for(step = 0; step < pin_steps; step++){
-    digitalWrite(digital_pin, HIGH);
-    delay(10);
-    Serial.println("Step");
-    digitalWrite(digital_pin, LOW);
-    delay(10);
-  }
-}
 
 void loop()
 {
@@ -194,26 +187,27 @@ void read_temperature(){
     byte present = 0;
     present = temp_sensors.reset();
     if (present){
-	temp_sensors.select(addr1);    
-	temp_sensors.write(0xBE);
-	for ( i = 0; i < 9; i++) {   // we need 9 bytes of data
-	    OneWireData[i] = temp_sensors.read();
-	}
-	temp1 =  ((OneWireData[1] << 8) + OneWireData[0] ) * 0.5;  // 12Bit = 0,0625 C per Bit
+  temp_sensors.select(addr1);    
+  temp_sensors.write(0xBE);
+  for ( i = 0; i < 9; i++) {   // we need 9 bytes of data
+      OneWireData[i] = temp_sensors.read();
+  }
+  temp1 =  ((OneWireData[1] << 8) + OneWireData[0] ) * 0.5;  // 12Bit = 0,0625 C per Bit
     }else{temp1=0;}
 
     present = temp_sensors.reset();
     if (present){
-	temp_sensors.select(addr2);    
-	temp_sensors.write(0xBE);
-	for ( i = 0; i < 9; i++) {   // we need 9 bytes of data
-	    OneWireData[i] = temp_sensors.read();
-	}
-	temp2 =  ((OneWireData[1] << 8) + OneWireData[0] ) * 0.5;  // 12Bit = 0,0625 C per Bit
+  temp_sensors.select(addr2);    
+  temp_sensors.write(0xBE);
+  for ( i = 0; i < 9; i++) {   // we need 9 bytes of data
+      OneWireData[i] = temp_sensors.read();
+  }
+  temp2 =  ((OneWireData[1] << 8) + OneWireData[0] ) * 0.5;  // 12Bit = 0,0625 C per Bit
     }else{
-	temp2=0;
+  temp2=0;
     }
-    Serial.print("T\t");
+    Serial.print("T");
+    Serial.print('\t');
     Serial.print(temp1);
     Serial.print('\t');
     Serial.println(temp2);

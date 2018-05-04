@@ -17,9 +17,13 @@ int STEP;
 #define MS2 15
 #define MS3 16
 
+// Acceleration and deceleration values are always in FULL steps / s^2
+//#define MOTOR_ACCEL 1000
+//#define MOTOR_DECEL 500
+
 #define StepMode 1 // Define the stepper mode (microsteps) 1 (100% Torque), 2 (71% Torque), 4 (38% Torque), 8 (20% Torque), 16 (10% Torque)
 
-#define ENABLE 11
+#define ENABLE 12
 
 int dt = 10;
 int step, pin_steps, digital_pin;
@@ -39,16 +43,20 @@ void setup()
   input_string.reserve(200);
   //set up digital out pins
   int digital_pin;
-  for (digital_pin=11; digital_pin<54; digital_pin++){
+  for (digital_pin=11; digital_pin<31; digital_pin++){
     pinMode(digital_pin, OUTPUT);
     digitalWrite(digital_pin, LOW);    
+  }
+    for (digital_pin=31; digital_pin<54; digital_pin++){
+    pinMode(digital_pin, OUTPUT);
+    digitalWrite(digital_pin, HIGH);    
   }
   for (digital_pin=1; digital_pin< 11; digital_pin++){
     pinMode(digital_pin, INPUT);
   }
 }
 
-void measure_analog(){
+void measure_analog(){ // Schematics at http://startrobotics.blogspot.com/2013/05/how-to-use-ir-led-and-photodiode-with-arduino.html
   if (input_string.length()>11)
   {
     int iter;
@@ -86,24 +94,28 @@ void measure_analog(){
 
 void switch_digital(){
   STEP = input_string.substring(1,3).toInt();
-  Serial.println(digital_pin);
+  //Serial.print(STEP);
   pin_steps = input_string.substring(3,8).toInt();
-  Serial.println(pin_steps);
+  //Serial.print(pin_steps);
   A4988 stepper(MOTOR_STEPS, DIR, STEP, ENABLE, MS1, MS2, MS3);
   if (pin_steps>0){
-  stepper.begin(RPM);
-  stepper.enable();
-  stepper.setMicrostep(StepMode);
-  stepper.move(StepMode * pin_steps);
-  }else if (pin_steps=0){
-    digitalWrite(digital_pin,LOW);
+    //Serial.println("Starting motor");
+    //digitalWrite(ENABLE,LOW);
+    stepper.begin(RPM, StepMode);
+    stepper.enable();
+    //stepper.setSpeedProfile(stepper.LINEAR_SPEED, MOTOR_ACCEL, MOTOR_DECEL); //Set LINEAR_SPEED (accelerated) profile.
+    //stepper.startMove(pin_steps);
+    //Serial.println("Movement finished");
+  }else if (pin_steps==0){
+    digitalWrite(STEP,!digitalRead(STEP));
+    Serial.println("Digital Pin "+String(STEP)+" was toggled.");
   }else{
     Serial.print("error: switch_digital() received bad pin state: ");
     Serial.println(input_string);
   }
   Serial.print("D");
   Serial.print('\t');
-  Serial.print(digital_pin);
+  Serial.print(STEP);
   Serial.print('\t');
   Serial.println(pin_steps);
 }
@@ -116,10 +128,10 @@ void switch_led(){
   }else if (pin_state=='0'){
     digitalWrite(digital_pin,LOW);
   }else{
-    Serial.print("error: switch_digital() received bad pin state: ");
+    Serial.print("error: switch_led() received bad pin state: ");
     Serial.println(input_string);
   }
-  Serial.print("D");
+  Serial.print("L");
   Serial.print('\t');
   Serial.print(digital_pin);
   Serial.print('\t');

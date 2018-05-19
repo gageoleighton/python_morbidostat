@@ -1,10 +1,6 @@
 #include <Arduino.h>
 #include "A4988.h"
-
-/*
-Updated to reflect the control of a stepper
-*/
-
+#include "Statistic.h"  // without trailing s
 #include <OneWire.h>
 
 // using a 200-step motor (most common)
@@ -25,6 +21,8 @@ int STEP;
 
 #define ENABLE 12
 
+Statistic myStats;
+
 int dt = 10;
 int step, pin_steps, digital_pin;
 String input_string="";
@@ -43,13 +41,13 @@ void setup()
   input_string.reserve(200);
   //set up digital out pins
   int digital_pin;
-  for (digital_pin=11; digital_pin<31; digital_pin++){
-    pinMode(digital_pin, OUTPUT);
-    digitalWrite(digital_pin, LOW);    
-  }
-    for (digital_pin=31; digital_pin<54; digital_pin++){
+  for (digital_pin=11; digital_pin<13; digital_pin++){
     pinMode(digital_pin, OUTPUT);
     digitalWrite(digital_pin, HIGH);    
+  }
+    for (digital_pin=13; digital_pin<54; digital_pin++){
+    pinMode(digital_pin, OUTPUT);
+    digitalWrite(digital_pin, LOW);    
   }
   for (digital_pin=1; digital_pin< 11; digital_pin++){
     pinMode(digital_pin, INPUT);
@@ -59,6 +57,7 @@ void setup()
 void measure_analog(){ // Schematics at http://startrobotics.blogspot.com/2013/05/how-to-use-ir-led-and-photodiode-with-arduino.html
   if (input_string.length()>11)
   {
+    myStats.clear(); //explicitly start clean
     int iter;
     float mean=0.0;
     float var_sq=0.0;
@@ -68,22 +67,23 @@ void measure_analog(){ // Schematics at http://startrobotics.blogspot.com/2013/0
     int tmpdt = input_string.substring(7,11).toInt();
     for (iter=0; iter<n_measurements; iter++){
       val=(float)analogRead(analog_pin);
-      mean += val;
-      var_sq += val*val;
+      myStats.add(val);
+      //mean += val;
+      //var_sq += val*val;
       delay(tmpdt);
     }
-    mean /= (float)n_measurements;
-    var_sq /= (float)n_measurements;
-    var_sq -= mean*mean;
+    //mean /= (float)n_measurements;
+    //var_sq /= (float)n_measurements;
+    //var_sq -= mean*mean;
     Serial.print("A");
     Serial.print('\t');
     Serial.print(analog_pin);
     Serial.print('\t');
-    Serial.print(mean);
+    Serial.print(myStats.average(),4);
     Serial.print('\t');
-    Serial.print(var_sq);
+    Serial.print(myStats.pop_stdev(), 4);
     Serial.print('\t');
-    Serial.print(n_measurements);
+    Serial.print(myStats.count());
     Serial.print('\t');
     Serial.println(tmpdt);
   }else{
@@ -108,7 +108,7 @@ void switch_digital(){
     //Serial.println("Movement finished");
   }else if (pin_steps==0){
     digitalWrite(STEP,!digitalRead(STEP));
-    Serial.println("Digital Pin "+String(STEP)+" was toggled.");
+    //Serial.println("Digital Pin "+String(STEP)+" was toggled.");
   }else{
     Serial.print("error: switch_digital() received bad pin state: ");
     Serial.println(input_string);

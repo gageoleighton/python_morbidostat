@@ -29,16 +29,12 @@ class set_up_dialog(Tkinter.Frame):
                                     ('OD_dt', 'Measurment interval [s]')]
         # bookkeeping and annotation
         self.string_variable_names = [('experiment_name', 'Experiment name '),
-                                    ('bug', 'Organism'),
-                                    ('drugA', 'Drug A'),('drugB', 'Drug B')]
+                                    ('bug', 'Organism')]
         # floating point variables that define the feedback properties and concentrations
         self.concentration_variable_names = [('target_OD', 'Target OD'),
                                     ('dilution_threshold', 'Dilution Threshold'),
                                     ('dilution_factor', 'Dilution Factor'),
-                                    ('max_growth_fraction', 'Max. exc. growth (rel to target)'),
-                                    ('AB_switch_conc', 'switch A to B'),
-                                    ('drugA_concentration', 'Drug A concentration'),
-                                    ('drugB_concentration', 'Drug B concentration')]
+                                    ('max_growth_fraction', 'Max. exc. growth (rel to target)')]
 
         self.variables = {}
         for ttype,var_name in self.time_variable_names +\
@@ -112,7 +108,7 @@ class set_up_dialog(Tkinter.Frame):
                 self.morb.__setattr__(ttype, float(self.variables[ttype].get()))
 
             # set active vials -> make a list of checked buttons
-            self.morb.vials = [vi for vi in range(15) if 
+            self.morb.vials = [vi for vi in range(9) if 
                                self.vial_selector.vial_selector_variables[vi].get()]
         elif self.morb.interrupted:
             # update some parameters:
@@ -124,14 +120,10 @@ class set_up_dialog(Tkinter.Frame):
                     self.morb.experiment_duration = new_experiment_length
                     print ("added", cycles_to_add, 'cycles. New experiment duration', self.morb.experiment_duration)
                     self.morb.add_cycles_to_data_arrays(cycles_to_add)
-            new_drug_conc = (float(self.variables['drugA_concentration'].get()),
-                             float(self.variables['drugB_concentration'].get()))
-            self.morb.change_drug_concentrations(new_drug_conc[0], new_drug_conc[1])
             self.morb.target_OD = float(self.variables['target_OD'].get())
             self.morb.dilution_factor = float(self.variables['dilution_factor'].get())
             self.morb.dilution_threshold = float(self.variables['dilution_threshold'].get())
             self.morb.max_growth_fraction = float(self.variables['max_growth_fraction'].get())
-            self.morb.AB_switch_conc = float(self.variables['AB_switch_conc'].get())
 
         self.morb.calculate_derived_values()
         self.top.destroy()
@@ -148,7 +140,7 @@ class vial_selection_dialog(Tkinter.Frame):
         self.morb = morb
         self.vial_selector_variables = []
         # make a list of Tkinter.IntVar and set them with the current active vials 
-        for xi in range(5):
+        for xi in range(3):
             for yi in range(3):
                 vi= xi*3+yi
                 self.vial_selector_variables.append(Tkinter.IntVar())
@@ -164,7 +156,7 @@ class vial_selection_dialog(Tkinter.Frame):
         vial_selector_frame.pack()
 
         vial_selector_buttons = []
-        for xi in range(5):
+        for xi in range(3):
             for yi in range(3):
                 vi= xi*3+yi
                 vial_selector_buttons.append(Tkinter.Checkbutton
@@ -187,11 +179,10 @@ class experiment_selector(Tkinter.Frame):
         self.top.title("select experiment type")
         self.morb = morb
 
-        self.experiment_types = [("Morbidostat", morbi.MORBIDOSTAT_EXPERIMENT),
-                            ("Fixed OD", morbi.FIXED_OD_EXPERIMENT),
+        self.experiment_types = [("Fixed OD", morbi.FIXED_OD_EXPERIMENT),
                             ("Growth curve", morbi.GROWTH_RATE_EXPERIMENT)]
         self.v = Tkinter.IntVar()
-        self.v.set(0) # initialize default choice
+        self.v.set(1) # initialize default choice
 
         self.selector_window()
 
@@ -291,14 +282,6 @@ class morbidostat_interface(Tkinter.Frame):
         self.morb.resume_experiment()
         self.update_status_strings()
 
-    def reset(self):
-        '''
-        called by reset button
-        '''
-        self.all_good=True
-        self.morb.reset_concentrations()
-        self.update_status_strings()
-
     def status_str(self):
         '''
         translates the status of the morbidostat into a human readabe string
@@ -394,8 +377,6 @@ class morbidostat_interface(Tkinter.Frame):
                                    command=self.start, height = 2)
         self.interrupt_button =Tkinter.Button(self.run_time_frame, text="INTERRUPT", fg="red", 
                                   command=self.interrupt, height = 2)
-        self.reset_button =Tkinter.Button(self.run_time_frame, text="RESET CONC.", fg="black", 
-                                  command=self.reset, height = 2)
         self.resume_button = Tkinter.Button(self.run_time_frame, text="RESUME", fg="black", 
                                     command=self.resume, height = 2)
         self.quit_button = Tkinter.Button(self.run_time_frame, text="QUIT", fg="black", 
@@ -420,9 +401,8 @@ class morbidostat_interface(Tkinter.Frame):
         self.refresh_button.grid(row= 7, column = 1)
         self.start_button.grid(row= 7, column = 2)
         self.interrupt_button.grid(row= 7, column = 3)
-        self.reset_button.grid(row= 7, column = 4)
-        self.resume_button.grid(row= 7, column = 5)
-        self.quit_button.grid(row= 7, column = 6)
+        self.resume_button.grid(row= 7, column = 4)
+        self.quit_button.grid(row= 7, column = 5)
 
         # make sure all strings are uptodate
         self.open_experiment_type_selector()
@@ -460,4 +440,3 @@ if __name__ == '__main__':
     gui_thread = threading.Thread(target = run_GUI, args = (mymorb,))
     gui_thread.start()
     
-

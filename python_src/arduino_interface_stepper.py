@@ -3,29 +3,29 @@ import threading
 import math
 import serial,os
 import numpy as np
+import re
 
 lok=threading.Lock()
 
 debug = True
+state = True
 baudrate = 9600
 # arduino pin controlling the IR LEDs via a relais
-light_switch = 12
-thermometer_pin = 1
-suction_pump = 17
+light_switch = 26 # All LED pins are shifted 26 up from vial pins
+thermometer_pin = 2
+suction_pump = int(35)
 # dictionary mapping pumps to pins, two pins required for steppers this defines the steps (direction will no change)
-pumps = {'drugA': [27,28,29,30,31,32,33,34,35], #[14,15,16,17,18,19, 12, 20,21,11,10,9,8,7,6],
-         'drugB': [36,37,38,39,40,41,42,43,44], #[30,31, 32, 33,34,35, 23, 36,37, 24,25, 26,27,28,29], 
-         'medium': [18,19,20,21,22,23,24,25,26], # [53,52,51,50,49,48, 45 , 47,46, 44,43,42,41,40,39],
+pumps = {'medium': [17,18,19,20,21,22,23,24,25], # [53,52,51,50,49,48, 45 , 47,46, 44,43,42,41,40,39],
 #         'medium': [41,40,39,44,43,42,45,47,46,50,49,48,53,52,51],
          'waste': suction_pump}
 
 
 #vials_to_pins_assignment = [10,5,0, 11,6,1,12,7,2,13,8,3,14,9,4]
-vials_to_pins_assignment = [2,3,4,5,6,7,8,9,10] # These are the IR sensor pins, Reduced to 9 vials
+vials_to_pins_assignment = [0,1,2,3,4,5,6,7,8] # These are the IR sensor pins, Reduced to 9 vials
 
 
 ####
-morb_path = os.getcwd() #'/home/morbidostat/morbidostat/python_arduino/'
+morb_path = '/home/bioreactor/Desktop/python_morbidostat/' #os.getcwd()
 
 ############
 # load calibration parameters
@@ -159,19 +159,36 @@ class morbidostat:
 
 
     def vial_to_pin(self, vial):
-        assert vial<15, "maximal vial number is 15, got "+str(vial)
+        assert vial<9, "maximal vial number is 9, got "+str(vial)
         return vials_to_pins_assignment[vial]
 
-    def voltage_to_OD(self,vial, mean_val, std_val):
+    def voltage_to_OD(self,vial, mean_val, std_error):
         if mean_val is None:
             print ("got None instead of an AD output for vial",vial)
             return 0,0
         else:
-            ODval = voltage_to_OD_params[vial,0]*mean_val+voltage_to_OD_params[vial,1]
-            ODstd = voltage_to_OD_params[vial,0]*std_val
+            print(voltage_to_OD_params, vial, mean_val, std_error)
+            if voltage_to_OD_params.ndim > 1:
+                a, b, c, d, e = voltage_to_OD_params[vial]
+                ODvals = np.roots([a,b,c,d,(e-mean_val)])#voltage_to_OD_params[vial][0]*mean_val**2+voltage_to_OD_params[vial][1]*mean_val+voltage_to_OD_params[vial][2]
+                print(str(ODvals))
+                ODval = ODvals.real[0]
+                ODstds = np.absolute(np.roots([a,b,c,d,(e-mean_val-std_error)])-ODval)
+                print(str(ODstds))
+                ODstd = ODstds.real[0]
+            else:
+                a, b, c, d, e = voltage_to_OD_params
+                ODvals = np.roots([a,b,c,d,(e-mean_val)])#voltage_to_OD_params[0]*mean_val**2+voltage_to_OD_params[1]*mean_val+voltage_to_OD_params[2]
+                print(str(ODvals))
+                ODval = ODvals.real[0]
+                ODstds = np.absolute(np.roots([a,b,c,d,(e-mean_val-std_error)])-ODval)
+                print(str(ODstds))
+                ODstd = ODstds.real[0]
+            #ODval = math.log(100/ODval,10)
+            print(str(ODval),str(ODstd))
             return max(ODval, 0.0001), ODstd
 
-    def measure_OD(self, vial, n_measurements=1, dt=10, switch_light_off=True):
+    def measure_OD(self, vial, n_measurements=10, dt=10, switch_light_off=True):
         '''
         measure the OD at the specified vial n_measurement times with a time lag
         of dt milli seconds between measurements. 
@@ -182,10 +199,10 @@ class morbidostat:
         dt: time lag between measurements (<10000 ms)
         '''
         analog_pin = self.vial_to_pin(vial)
-        mean_val, std_val, cstr= self.measure_voltage_pin( analog_pin, n_measurements, dt, switch_light_off)
-        return self.voltage_to_OD(vial, mean_val, std_val)
+        mean_val, std_error, cstr = self.measure_voltage_pin( analog_pin, n_measurements, dt, switch_light_off) # Returns the mean, standard error, and received string 
+        return self.voltage_to_OD(vial, mean_val, std_error)
 
-    def measure_voltage(self,vial, n_measurements=1, dt=10, switch_light_off=True):
+    def measure_voltage(self, vial, n_measurements=10, dt=10, switch_light_off=True):
         analog_pin = self.vial_to_pin(vial)
         return self.measure_voltage_pin(analog_pin, n_measurements, dt, switch_light_off)	
 
@@ -200,7 +217,7 @@ class morbidostat:
         dt: time lag between measurements (<10000 ms)
         '''
         if self.ser.isOpen():
-            self.switch_light(True) # switch IR LEDs on
+            self.switch_led(analog_pin + 26, True) # switch LEDs on
             command_str = 'A'+'{number:0{width}d}'.format(number=analog_pin, width=2) \
                 +'{number:0{width}d}'.format(number=n_measurements, width=4) \
                 +'{number:0{width}d}'.format(number=dt, width=4) +'\n'
@@ -219,14 +236,15 @@ class morbidostat:
                 print(str(time.time())+" in: "+measurement.decode()) 
 
             if switch_light_off:  
-                self.switch_light(False) # switch IR LEDs off
+                self.switch_led(analog_pin + 26, False) # switch IR LEDs off
             # parse the input
-            entries = measurement.split()
+            entries = measurement.decode().split()
 
-            if len(entries)>3 and entries[0]=='A' and int(entries[1])==analog_pin:
-                return float(entries[2]), math.sqrt(float(entries[3])), command_str
+            if len(entries)>2 and entries[0]=='A' and int(entries[1])==analog_pin:
+                return float(entries[2]), float(entries[3])/math.sqrt(n_measurements), command_str # Returns mean, standard error, and received string
             else:
                 print(measurement)
+                print(entries)
                 print("measure_voltage: received unexpected reply")
                 return None, None, command_str
         else:
@@ -240,7 +258,7 @@ class morbidostat:
         pump_number: number of the pump to be switched on (0-15)
         volume: volume to be added in ml
         '''
-        run_steps = self.volume_to_steps(pump_type, pump_number, volume)
+        run_steps = int(self.volume_to_steps(pump_type, pump_number, volume))
         if run_steps>0:
             # run the pump for calculated time
             self.run_pump(pump_type, pump_number, run_steps)
@@ -251,7 +269,7 @@ class morbidostat:
         params:
         volume: volume to be removed in ml
         '''
-        run_steps = self.volume_to_steps('waste', 0, volume)
+        run_steps = int(self.volume_to_steps('waste', 0, volume))
         if run_steps>0:
             # run the pump for calculated time
             self.run_waste_pump(run_steps)
@@ -308,14 +326,16 @@ class morbidostat:
             print(str(time.time())+" in: "+response.decode()) 
 
         # parse the response and verify that the pump was set to the correct state
-        entries = response.split()
+        #entries = re.split(r'\t+', response.rstrip('\n'))
+        entries = response.decode().split()
         if len(entries)>2 and entries[0]=='D' and int(entries[1])==pin_number:
-            if (entries[2]=='1')!=state:
-                print("pin "+str(pin_number)+" in wrong state\nArduino response")
+            if (entries[2])!=run_steps:
+                print("pin "+str(pin_number)+" wrong steps\nArduino response")
                 print(response)
         else:
-            print("switch_pin received bad response:")
-            print (response)
+            print("error 1: switch_pin received bad response:")
+            print(response)
+            print(entries)
 
     def switch_led(self, pin_number, state):
         '''
@@ -336,14 +356,16 @@ class morbidostat:
             print(str(time.time())+" in: "+response.decode()) 
 
         # parse the response and verify that the pump was set to the correct state
-        entries = response.split()
-        if len(entries)>2 and entries[0]=='L' and int(entries[1])==pin_number:
+        #entries = re.split(r'\t+', response.rstrip('\n'))
+        entries = response.decode().split()
+        if len(entries)>2 and entries[0]=='L' and int(entries[1])==pin_number:#Fix this in the arduino code from D to L
             if (entries[2]=='1')!=state:
                 print("pin "+str(pin_number)+" in wrong state\nArduino response")
                 print(response)
         else:
-            print("switch_pin received bad response:")
-            print (response)
+            print("error 2: switch_pin received bad response:")
+            print(response)
+            print(entries)
 
     def switch_light(self, state):
         '''

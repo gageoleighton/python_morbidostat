@@ -4,25 +4,30 @@ This is an attempt to utilize the webserver library REMi (https://github.com/ddd
 
 # OD CALIBRATION:
 #
-# type the following
+# type the following in terminal
 
+# Move into the python_src directory
 cd python_src
-ipython --pylab
+
+#
+python3 -i
 
 # an Ipython shell will start
 # in the shell, type
 
-from morbidostat_experiment import *
+from morbidostat_experiment_stepper import *
 
 # the latter imports the necessary functions.
 # then type
 
-calibrate_OD()
+calibrate_OD(num)
+
+# Where num is the number of vials you wish to calibrate
 
 # you will be prompted for the OD of the standard used, enter a number
 # following that, confirm that the vial is placed in the correct receptible by pressing enter
-# repeat for 1-15
-# repeat for all available OD standards (at least 2)
+# repeat for 1-num
+# repeat for all available OD standards (at least 2) - Range from zero to OD ~1
 # after all standards have been measured, press q
 
 # regression statistics will be printed and a figure should open showing the gauge curves. 
@@ -32,6 +37,7 @@ show()
 
 # the routine will save a file OD_calibration.dat in python_src
 # and a file voltage_measurements_YYYYMMDD.dat in the data directory
+# If you calibrate twice during the same day the previous entry will be rewritten
 
 
 ######################################################################
@@ -58,14 +64,14 @@ morb_monitor.update_all()
 # open a new terminal by right click on the Terminal button on the left
 # type 
 
-./experiment.sh
+./experiment_stepper.sh
 
 # two windows will open. Choose the type of experiment in the small one
 # and press "DONE"
 # 
 # Select the "PARAMETERS" button. A dialog will open
 # To select the active vials, click on vial selector. Uncheck any vials not in use
-# and press done. 
+# and press done (You cannot modify parameters after the experiment has been started)
 # 
 # Start the experiment by pressing "START"
 
